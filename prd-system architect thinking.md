@@ -72,18 +72,19 @@ Platform ini dirancang untuk dua tipe pengguna utama dalam satu sesi keputusan: 
   - Sesi yang sudah Completed terkunci dari pengeditan dan hanya bisa dibaca.
 
 - **Guided flow Fase 01 — System Requirements Analysis** (Priority: High)
-  - Form terstruktur untuk mendefinisikan Root Objective dengan tag Hygienic Function atau Motivational Function.
-  - Input Environmental Variable Mapping (EVM): Internal Parameters, External Constraints, dan Constants.
-  - Validasi awal: sistem memperingatkan jika Root Objective tidak dapat dikategorikan (emergent vs deliberate).
+  - Form terstruktur untuk mendefinisikan Root Objective dengan tag Hygienic Function atau Motivational Function, beserta uraian alasan logis (longtext).
+  - Input Environmental Variable Mapping (EVM): Internal Parameters dan External Constraints.
+  - Tab Import AI yang menyediakan penyimpanan Prompt Template untuk dieksekusi di agen eksternal, dan textarea untuk paste hasil JSON.
+  - Validasi awal: sistem memperingatkan jika form mandatory belum terisi.
 
 - **Guided flow Fase 02 — Variable & Constraint Definition** (Priority: High)
-  - Input Data Tagging dengan pemisahan eksplisit antara Hardcoded Data (fakta empiris) dan Variable Parameters (preferensi/asumsi).
-  - Input Threshold per variabel: Static Threshold (boolean) atau Dynamic Threshold (skala).
-  - Kalkulator Priority Queue dengan input Time Criticality Index dan System Impact Index, menghasilkan kategorisasi Eisenhower (Interrupt Routine / Cron Job / Daemon Process / Garbage Collection) secara otomatis.
+  - Input Data Tagging dan Threshold dengan tabel *pre-populated* (diambil otomatis dari EVM Fase 01). Pengguna hanya mengisi deskripsi, sumber/bukti, dan memilih tipe tagging (Hardcoded Data / Variable Parameter).
+  - Kalkulator Priority Queue (Matriks Eisenhower) terintegrasi: Pengguna menambahkan daftar *tasks* atau memilih dari rekomendasi AI, menginput nilai Time Criticality Index (U, 0-1) dan System Impact Index (I, 0-100), lalu sistem otomatis memplot tugas ke dalam visualisasi kuadran 2x2.
 
 - **Guided flow Fase 03 — Logic Debugging & Sanitization** (Priority: High)
-  - Checklist bias kognitif yang dipetakan ke setiap variabel: Data Sampling Error (Survivor Bias), Overfitting, Exception Suppression, Spurious Link, dan lainnya.
-  - Setiap variabel yang lolos sanitasi diberi status "Validated"; yang berpotensi bias diberi status "Warning" dengan penjelasan dan prosedur sanitasi yang disarankan.
+  - Penggunaan panel Import AI eksternal: Sistem akan meng-generate *prompt template* dinamis (memuat semua variabel Fase 02). Pengguna akan mengeksekusinya di AI eksternal dengan mengunggah file dokumen rujukan, lalu mem-paste hasil JSON kembali ke sistem.
+  - Visualisasi hasil validasi berupa tabel matriks sederhana: baris = variabel, kolom = 4 jenis bias (Sampling Error, Overfitting, Exception Suppression, Spurious Link).
+  - Indikator berupa ✅ (Lolos) atau ⚠️ (Warning). Klik pada indikator ⚠️ akan membuka detail alasan dan rekomendasi sanitasi dari AI.
   - Sistem menolak lanjut ke Fase 04 jika terdapat variabel berstatus Warning yang belum direspon oleh Lead.
 
 - **Guided flow Fase 04 — Computation & Execution** (Priority: High)
@@ -116,7 +117,7 @@ Pengguna baru mendaftar dan diarahkan ke onboarding singkat (3 langkah) yang men
 ### 5.2 Core experience
 
 - **Dashboard sesi:** Pengguna melihat semua sesi keputusan dalam workspace — aktif, selesai, dan diarsipkan — dengan indikator progres fase yang jelas (1/5, 3/5, dsb.).
-- **Phase navigator:** Di dalam setiap sesi, sidebar menampilkan 5 fase dengan status (Locked / Active / Completed). Fase berikutnya hanya terbuka setelah fase sebelumnya divalidasi — memastikan alur berpikir tidak dilewati.
+- **Phase navigator:** Di dalam setiap sesi, sidebar menampilkan 5 fase dengan status (Locked / Active / Completed). Navigasi bersifat dinamis; fase berikutnya hanya terbuka setelah fase sebelumnya diselesaikan melalui tombol "Selesaikan Fase". Pengguna dapat kembali ke fase sebelumnya tanpa kehilangan progres. Sesi yang sudah "done" membuka seluruh fase secara otomatis.
 - **Inline guidance:** Setiap field input dilengkapi tooltip dan contoh kasus nyata yang dapat diperluas. Pengguna tidak perlu membaca dokumentasi terpisah.
 - **Warning system:** Ketika sistem mendeteksi potensi bias di Fase 03, muncul banner kuning dengan penjelasan bug dan prosedur sanitasi — bukan sekadar tanda seru.
 - **EV Dashboard (Fase 04):** Visualisasi perbandingan opsi ditampilkan secara real-time saat pengguna mengisi nilai, sehingga pengguna dapat melihat bagaimana setiap input memengaruhi rekomendasi akhir.
@@ -242,21 +243,25 @@ Arif, seorang Kepala Seksi di Kanwil DJPb, menghadapi keputusan strategis: apaka
 ### 10.3 Mendefinisikan Root Objective (Fase 01)
 
 - **ID:** GH-003
-- **Description:** Sebagai Decision Lead, saya ingin mendefinisikan Root Objective dengan tag Hygienic atau Motivational sehingga seluruh tim memiliki pemahaman yang sama tentang tujuan keputusan sebelum menganalisis variabel.
+- **Description:** Sebagai Decision Lead, saya ingin mendefinisikan Root Objective dengan tag Hygienic atau Motivational beserta alasannya, sehingga seluruh tim memiliki pemahaman yang sama tentang tujuan keputusan sebelum menganalisis variabel.
 - **Acceptance criteria:**
-  - [ ] Form Fase 01 menyediakan field teks untuk pernyataan Root Objective (wajib) dan pilihan tag: Hygienic Function atau Motivational Function.
+  - [ ] Form Fase 01 menyediakan field teks untuk pernyataan Root Objective (wajib) dan pilihan tag: Hygienic Function atau Motivational Function, beserta isian uraian (longtext) alasan logis pemilihan fungsi (wajib).
   - [ ] Sistem menampilkan definisi singkat Hygienic vs. Motivational sebagai tooltip saat pengguna memilih tag.
-  - [ ] Form EVM menyediakan section terpisah untuk Internal Parameters, External Constraints, dan Constants — masing-masing dengan minimal 1 entri wajib sebelum Fase 01 dapat diselesaikan.
+  - [ ] Form EVM menyediakan section terpisah untuk Internal Parameters dan External Constraints — masing-masing dengan minimal 1 entri wajib sebelum Fase 01 dapat diselesaikan.
+  - [ ] Menyediakan UI untuk menyimpan dan menampilkan Prompt Template AI khusus Fase 01 agar user bisa menjalankan skill agent di luar sistem, lalu menempelkan (paste) hasil JSON kembali ke sistem. Hasil AI menampilkan rekomendasi Root Objective, Function Tag, Function Justification, EVM, dan Tasks.
+  - [ ] Setiap item rekomendasi AI memiliki tombol "Gunakan" untuk menyalin nilai ke form manual (mockup UI).
   - [ ] Setelah Lead menandai Fase 01 sebagai selesai, Fase 02 terbuka otomatis dan Fase 01 terkunci dari pengeditan (kecuali Lead secara eksplisit membuka kembali dengan catatan revisi).
 
-### 10.4 Melakukan data tagging (Fase 02)
+### 10.4 Melakukan data tagging dan Penentuan Prioritas (Fase 02)
 
 - **ID:** GH-004
-- **Description:** Sebagai Decision Lead atau Member, saya ingin menandai setiap variabel sebagai Hardcoded Data atau Variable Parameter sehingga fakta empiris dan asumsi manajerial tidak tercampur dalam perhitungan.
+- **Description:** Sebagai Decision Lead atau Member, saya ingin menandai setiap variabel yang dihasilkan dari Fase 01 dan menentukan prioritas task menggunakan Matriks Eisenhower terintegrasi.
 - **Acceptance criteria:**
-  - [ ] Setiap variabel yang diinput memiliki field: nama variabel, deskripsi, sumber/bukti, dan tag (Hardcoded Data / Variable Parameter).
+  - [ ] Tabel Data Tagging terisi otomatis (pre-populated) dari EVM Fase 01. Pengguna melengkapi field: deskripsi, sumber/bukti, dan tag (Hardcoded Data / Variable Parameter). Tidak ada fitur CRUD variabel di fase ini.
+  - [ ] Tabel Threshold terisi otomatis berdasarkan variabel yang sama. Pengguna menentukan jenis threshold dan nilai/kondisi batas.
   - [ ] Sistem menampilkan peringatan inline jika pengguna menandai variabel sebagai Hardcoded Data tetapi tidak mengisi kolom sumber/bukti.
-  - [ ] Variabel yang sudah di-tag muncul dalam daftar yang dapat diedit selama Fase 02 aktif.
+  - [ ] Bagian Priority Queue memuat visualisasi Matriks Eisenhower 2x2. Pengguna dapat menambahkan Task (Opsi), menginput U (0-1) dan I (0-100), dan tugas tersebut otomatis ter-plot pada kuadran yang tepat.
+  - [ ] Setiap task yang telah ter-plot pada Matriks Eisenhower memiliki opsi "Edit/Re-plot" (mengembalikan task ke tabel input) dan "Hapus" (menghapus secara permanen).
   - [ ] Seluruh variabel dari Fase 02 secara otomatis tersedia sebagai referensi di Fase 04 tanpa perlu input ulang.
 
 ### 10.5 Menjalankan logic debugging (Fase 03)
@@ -264,10 +269,13 @@ Arif, seorang Kepala Seksi di Kanwil DJPb, menghadapi keputusan strategis: apaka
 - **ID:** GH-005
 - **Description:** Sebagai Decision Lead, saya ingin menjalankan pemeriksaan bias kognitif terhadap setiap variabel sehingga saya dapat mengidentifikasi dan memperbaiki cacat logika sebelum melanjutkan ke kalkulasi.
 - **Acceptance criteria:**
-  - [ ] Sistem menampilkan checklist 7 jenis bias (Data Sampling Error, Overfitting, Exception Suppression, Spurious Link, Calculation Precision Error, Memory Leak/Zombie Process, Unintended Side Effect) untuk setiap variabel.
-  - [ ] Setiap bias yang ditandai "Terdeteksi" menampilkan definisi bug dan prosedur sanitasi yang disarankan.
-  - [ ] Variabel mendapat status "Validated" (hijau) atau "Warning" (kuning) berdasarkan hasil checklist.
-  - [ ] Sistem memblokir transisi ke Fase 04 jika ada variabel berstatus Warning yang belum diberi respons oleh Lead (respons minimal: catatan tindakan sanitasi atau justifikasi untuk tetap menggunakan variabel tersebut).
+  - [ ] Form Fase 03 menyediakan "Prompt Template" dinamis yang menyertakan semua variabel dari Fase 02 untuk dieksekusi di AI eksternal bersama dokumen pendukung (multimodal).
+  - [ ] Sistem menyediakan area textarea untuk mem-paste hasil JSON dari AI eksternal.
+  - [ ] Setelah JSON di-parse, sistem menampilkan visualisasi tabel matriks: baris = Nama Variabel, kolom = 4 Jenis Bias (Sampling Error, Overfitting, Exception Suppression, Spurious Link).
+  - [ ] Sel dalam tabel menampilkan ikon ✅ (Lolos) atau ⚠️ (Warning). Seluruh ikon dapat diklik untuk melihat detail.
+  - [ ] Jika ikon ⚠️ diklik, sistem memunculkan popover/modal/expandable row yang berisi penjelasan detail bias dan prosedur sanitasi yang direkomendasikan AI.
+  - [ ] Jika ikon ✅ diklik, sistem menampilkan alasan logis mengapa variabel tersebut dianggap lolos validasi (insight).
+  - [ ] Jika ada variabel dengan status Warning, pengguna harus memperbaiki/merevisi variabel tersebut sebelum dapat menyelesaikan Fase 03 (kembali ke iterasi perbaikan). Tombol navigasi fase digunakan untuk kembali ke Fase 02.
 
 ### 10.6 Menghitung Expected Value (Fase 04)
 
