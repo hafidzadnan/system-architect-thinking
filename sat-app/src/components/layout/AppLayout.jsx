@@ -4,7 +4,7 @@ import Header from './Header'
 import { useAuthStore } from '../../stores/authStore'
 
 export default function AppLayout() {
-  const isLoggedIn = useAuthStore(s => s.isLoggedIn)
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn)
   if (!isLoggedIn) return <Navigate to="/login" replace />
 
   return (
