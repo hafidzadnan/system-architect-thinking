@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sat-app-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "sat-app"],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "sat-app-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--prefix", "sat-app"],
+      "port": 4173,
+      "autoPort": true
+    }
+  ]
+}

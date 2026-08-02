@@ -91,65 +91,70 @@ export default function Phase02({ onNext, onPrev }) {
             </span>
           </span>
         </h3>
-        <table className="var-table">
-          <thead>
-            <tr>
-              <th style={{ width: '22%' }}>Nama Variabel</th>
-              <th style={{ width: '30%' }}>Deskripsi</th>
-              <th style={{ width: '25%' }}>Sumber/Bukti</th>
-              <th style={{ width: '23%' }}>Tag</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>
-                  Kapasitas SDM KPPN
-                </div>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Kapasitas bervariasi dalam mengadopsi teknologi baru"
-                />
-              </td>
-              <td>
-                <input
-                  className="input"
-                  placeholder="Wajib diisi untuk Hardcoded"
-                />
-              </td>
-              <td>
-                <select className="select">
-                  <option>Variable Parameter</option>
-                  <option>Hardcoded Data</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>
-                  Luas Demografi Wilayah
-                </div>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Demografi luas dan kondisi jaringan internet bervariasi"
-                />
-              </td>
-              <td>
-                <input className="input" defaultValue="Data geografis daerah" />
-              </td>
-              <td>
-                <select className="select">
-                  <option>Hardcoded Data</option>
-                  <option>Variable Parameter</option>
-                </select>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-responsive">
+          <table className="var-table">
+            <thead>
+              <tr>
+                <th style={{ width: '22%' }}>Nama Variabel</th>
+                <th style={{ width: '30%' }}>Deskripsi</th>
+                <th style={{ width: '25%' }}>Sumber/Bukti</th>
+                <th style={{ width: '23%' }}>Tag</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                    Kapasitas SDM KPPN
+                  </div>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Kapasitas bervariasi dalam mengadopsi teknologi baru"
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    placeholder="Wajib diisi untuk Hardcoded"
+                  />
+                </td>
+                <td>
+                  <select className="select">
+                    <option>Variable Parameter</option>
+                    <option>Hardcoded Data</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                    Luas Demografi Wilayah
+                  </div>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Demografi luas dan kondisi jaringan internet bervariasi"
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Data geografis daerah"
+                  />
+                </td>
+                <td>
+                  <select className="select">
+                    <option>Hardcoded Data</option>
+                    <option>Variable Parameter</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* THRESHOLD */}
@@ -165,55 +170,57 @@ export default function Phase02({ onNext, onPrev }) {
             </span>
           </span>
         </h3>
-        <table className="var-table">
-          <thead>
-            <tr>
-              <th style={{ width: '30%' }}>Variabel</th>
-              <th style={{ width: '25%' }}>Jenis Threshold</th>
-              <th style={{ width: '45%' }}>Nilai/Kondisi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>
-                  Kapasitas SDM KPPN
-                </div>
-              </td>
-              <td>
-                <select className="select">
-                  <option selected>Dynamic (Skala)</option>
-                  <option>Static (Boolean)</option>
-                </select>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Semakin tinggi skor adopsi teknologi, semakin baik"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>
-                  Luas Demografi Wilayah
-                </div>
-              </td>
-              <td>
-                <select className="select">
-                  <option>Static (Boolean)</option>
-                  <option>Dynamic (Skala)</option>
-                </select>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Aksesibilitas minimal jaringan 3G di setiap KPPN"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-responsive">
+          <table className="var-table">
+            <thead>
+              <tr>
+                <th style={{ width: '30%' }}>Variabel</th>
+                <th style={{ width: '25%' }}>Jenis Threshold</th>
+                <th style={{ width: '45%' }}>Nilai/Kondisi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                    Kapasitas SDM KPPN
+                  </div>
+                </td>
+                <td>
+                  <select className="select">
+                    <option selected>Dynamic (Skala)</option>
+                    <option>Static (Boolean)</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Semakin tinggi skor adopsi teknologi, semakin baik"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                    Luas Demografi Wilayah
+                  </div>
+                </td>
+                <td>
+                  <select className="select">
+                    <option>Static (Boolean)</option>
+                    <option>Dynamic (Skala)</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Aksesibilitas minimal jaringan 3G di setiap KPPN"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* PRIORITY QUEUE */}
@@ -236,22 +243,72 @@ export default function Phase02({ onNext, onPrev }) {
             Fase 01. Tentukan nilai U dan I untuk masing-masing task, lalu klik{' '}
             <strong>Plot</strong> untuk memasukkannya ke Matriks Eisenhower.
           </p>
-          <table className="var-table">
-            <thead>
-              <tr>
-                <th style={{ width: '45%' }}>Nama Task / Opsi</th>
-                <th style={{ width: '20%' }}>Mendesak? (U: 0-1)</th>
-                <th style={{ width: '20%' }}>Penting? (I: 0-100)</th>
-                <th style={{ width: '15%' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unplottedTasks.map((task) => (
-                <tr key={task.id}>
+          <div className="table-responsive">
+            <table className="var-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '45%' }}>Nama Task / Opsi</th>
+                  <th style={{ width: '20%' }}>Mendesak? (U: 0-1)</th>
+                  <th style={{ width: '20%' }}>Penting? (I: 0-100)</th>
+                  <th style={{ width: '15%' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unplottedTasks.map((task) => (
+                  <tr key={task.id}>
+                    <td>
+                      <div style={{ fontWeight: 500, fontSize: 13 }}>
+                        {task.name}
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        className="input"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="1"
+                        placeholder="0.0 - 1.0"
+                        value={task.u}
+                        onChange={(e) =>
+                          updateUnplotted(task.id, 'u', e.target.value)
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="0 - 100"
+                        value={task.i}
+                        onChange={(e) =>
+                          updateUnplotted(task.id, 'i', e.target.value)
+                        }
+                      />
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => handlePlot(task, false)}
+                      >
+                        + Plot
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {/* Manual Input Row */}
+                <tr style={{ background: '#F8FAFC' }}>
                   <td>
-                    <div style={{ fontWeight: 500, fontSize: 13 }}>
-                      {task.name}
-                    </div>
+                    <input
+                      className="input"
+                      placeholder="Ketik nama task baru (manual)..."
+                      value={manualTask.name}
+                      onChange={(e) =>
+                        setManualTask({ ...manualTask, name: e.target.value })
+                      }
+                    />
                   </td>
                   <td>
                     <input
@@ -261,9 +318,9 @@ export default function Phase02({ onNext, onPrev }) {
                       min="0"
                       max="1"
                       placeholder="0.0 - 1.0"
-                      value={task.u}
+                      value={manualTask.u}
                       onChange={(e) =>
-                        updateUnplotted(task.id, 'u', e.target.value)
+                        setManualTask({ ...manualTask, u: e.target.value })
                       }
                     />
                   </td>
@@ -274,72 +331,24 @@ export default function Phase02({ onNext, onPrev }) {
                       min="0"
                       max="100"
                       placeholder="0 - 100"
-                      value={task.i}
+                      value={manualTask.i}
                       onChange={(e) =>
-                        updateUnplotted(task.id, 'i', e.target.value)
+                        setManualTask({ ...manualTask, i: e.target.value })
                       }
                     />
                   </td>
                   <td>
                     <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => handlePlot(task, false)}
+                      className="btn btn-sm btn-secondary"
+                      onClick={() => handlePlot(manualTask, true)}
                     >
-                      + Plot
+                      + Plot Manual
                     </button>
                   </td>
                 </tr>
-              ))}
-              {/* Manual Input Row */}
-              <tr style={{ background: '#F8FAFC' }}>
-                <td>
-                  <input
-                    className="input"
-                    placeholder="Ketik nama task baru (manual)..."
-                    value={manualTask.name}
-                    onChange={(e) =>
-                      setManualTask({ ...manualTask, name: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    className="input"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="1"
-                    placeholder="0.0 - 1.0"
-                    value={manualTask.u}
-                    onChange={(e) =>
-                      setManualTask({ ...manualTask, u: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0 - 100"
-                    value={manualTask.i}
-                    onChange={(e) =>
-                      setManualTask({ ...manualTask, i: e.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={() => handlePlot(manualTask, true)}
-                  >
-                    + Plot Manual
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Matrix Visualization */}
