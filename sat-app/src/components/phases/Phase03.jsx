@@ -1,210 +1,233 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import {
+  useSessionStore,
+  selectPhase02Variables,
+} from '../../stores/sessionStore'
+import { useSettingsStore } from '../../stores/settingsStore'
+import { analyzeBias } from '../../services/biasAnalyzer'
+import { AnalysisError } from '../../services/openrouter'
+import { BIAS_TYPES, BIAS_LABELS } from '../../utils/constants'
 
 export default function Phase03({ onNext, onPrev }) {
-  const [showImport, setShowImport] = useState(false)
-  const [jsonInput, setJsonInput] = useState('')
-  const [selectedWarning, setSelectedWarning] = useState(null)
+  const phase01 = useSessionStore((s) => s.phase01)
+  const phase02 = useSessionStore((s) => s.phase02)
+  const phase03 = useSessionStore((s) => s.phase03)
+  const setPhase02Variable = useSessionStore((s) => s.setPhase02Variable)
+  const startPhase03Analysis = useSessionStore((s) => s.startPhase03Analysis)
+  const setPhase03Result = useSessionStore((s) => s.setPhase03Result)
+  const setPhase03Error = useSessionStore((s) => s.setPhase03Error)
+  const cancelPhase03Analysis = useSessionStore((s) => s.cancelPhase03Analysis)
+  const selectPhase03Cell = useSessionStore((s) => s.selectPhase03Cell)
 
-  // Default mock data to show the table if user hasn't imported JSON
-  const [validations, setValidations] = useState([
-    {
-      variableName: 'Kapasitas SDM KPPN',
-      biases: {
-        samplingError: {
-          status: 'warning',
-          reason:
-            'Klaim gaptek mungkin hanya berdasarkan observasi pada KPPN tertentu.',
-          recommendation:
-            'Perlu data survei dari seluruh KPPN di wilayah kerja.',
-        },
-        overfitting: {
-          status: 'warning',
-          reason:
-            'Generalisasi bahwa pegawai gaptek berdasarkan kasus kasuistik.',
-          recommendation: 'Verifikasi apakah masalah terjadi secara sistemik.',
-        },
-        exceptionSuppression: {
-          status: 'validated',
-          reason: 'Tidak ada data negatif yang sengaja disembunyikan.',
-          recommendation: '',
-        },
-        spuriousLink: {
-          status: 'validated',
-          reason: 'Klaim sebab-akibat dapat dibuktikan secara logis.',
-          recommendation: '',
-        },
-      },
-    },
-    {
-      variableName: 'Sisa Pagu Perjalanan Dinas',
-      biases: {
-        samplingError: {
-          status: 'validated',
-          reason:
-            'Data bersumber langsung dari database SAKTI yang bersifat empiris.',
-          recommendation: '',
-        },
-        overfitting: {
-          status: 'validated',
-          reason: 'Angka pagu mutlak dan tidak digeneralisasi.',
-          recommendation: '',
-        },
-        exceptionSuppression: {
-          status: 'validated',
-          reason: 'Sistem mencatat seluruh transaksi pagu tanpa terkecuali.',
-          recommendation: '',
-        },
-        spuriousLink: {
-          status: 'validated',
-          reason: 'Variabel mandiri, tidak ada tautan kausal palsu.',
-          recommendation: '',
-        },
-      },
-    },
-  ])
+  const apiKey = useSettingsStore((s) => s.apiKey)
+  const model = useSettingsStore((s) => s.model)
 
-  const defaultPrompt = `Anda adalah sistem pakar untuk validasi logika arsitektur sistem.
-Tugas Anda adalah membaca dokumen-dokumen multimodal (PDF/Word/Images) yang saya lampirkan, lalu mendeteksi potensi 4 jenis bias kognitif pada daftar variabel di bawah ini:
-1. Kapasitas SDM KPPN
-2. Sisa Pagu Perjalanan Dinas
+  const abortRef = useRef(null)
+  const runIdRef = useRef(0)
 
-Evaluasi setiap variabel terhadap bias: samplingError, overfitting, exceptionSuppression, spuriousLink.
-Jika aman, set status "validated" dan berikan "reason" (alasan logis mengapa lolos). Jika ada potensi bias, set status "warning" dan sertakan "reason" serta "recommendation" prosedur sanitasi.
+  const state = useMemo(() => ({ phase01, phase02 }), [phase01, phase02])
+  const variables = useMemo(() => selectPhase02Variables(state), [state])
 
-Hasilkan output murni berformat JSON seperti ini:
-{
-  "validations": [
-    {
-      "variableName": "Nama Variabel",
-      "biases": {
-        "samplingError": { "status": "warning", "reason": "...", "recommendation": "..." },
-        "overfitting": { "status": "validated", "reason": "...", "recommendation": "" },
-        "exceptionSuppression": { "status": "validated", "reason": "...", "recommendation": "" },
-        "spuriousLink": { "status": "validated", "reason": "...", "recommendation": "" }
-      }
-    }
-  ]
-}`
+  const { status, error, validations, analyzedAt, staleVariableIds, selected } =
+    phase03
 
-  const handleParseJSON = () => {
-    try {
-      const parsed = JSON.parse(jsonInput)
-      if (parsed && parsed.validations) {
-        setValidations(parsed.validations)
-        setShowImport(false)
-        setSelectedWarning(null)
-      } else {
-        alert(
-          "Format JSON tidak sesuai. Harus mengandung properti 'validations'.",
-        )
-      }
-    } catch (e) {
-      alert('Error parsing JSON: ' + e.message)
-    }
-  }
+  // Validasi lama bisa menunjuk variabel yang sudah dihapus di Fase 01, dan
+  // variabel baru bisa muncul setelah analisis terakhir — keduanya dihitung
+  // ulang tiap render agar matriks tidak pernah menampilkan baris hantu.
+  const variableById = useMemo(
+    () => new Map(variables.map((v) => [v.id, v])),
+    [variables],
+  )
+  const rows = useMemo(
+    () => validations.filter((v) => variableById.has(v.variableId)),
+    [validations, variableById],
+  )
+  const analyzedIds = useMemo(
+    () => new Set(validations.map((v) => v.variableId)),
+    [validations],
+  )
+  const newVariables = variables.filter((v) => !analyzedIds.has(v.id))
 
-  const handleCellClick = (variableName, biasType, biasData) => {
-    setSelectedWarning({
-      variableName,
-      biasType,
-      ...biasData,
-    })
-  }
-
-  const hasWarnings = validations.some((v) =>
+  const hasWarnings = rows.some((v) =>
     Object.values(v.biases).some((b) => b.status === 'warning'),
   )
+  const staleCount = staleVariableIds.filter((id) =>
+    variableById.has(id),
+  ).length
+  const isRunning = status === 'running'
+  const canAnalyze = Boolean(apiKey) && variables.length > 0 && !isRunning
+  const canFinish =
+    status === 'done' &&
+    rows.length > 0 &&
+    !hasWarnings &&
+    staleCount === 0 &&
+    newVariables.length === 0
 
-  const biasLabels = {
-    samplingError: 'Sampling Error',
-    overfitting: 'Overfitting',
-    exceptionSuppression: 'Exception Suppression',
-    spuriousLink: 'Spurious Link',
+  const runAnalysis = useCallback(async () => {
+    if (isRunning || !apiKey || variables.length === 0) return
+
+    // Batalkan request sebelumnya agar hasil lama tidak menimpa yang baru.
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const runId = ++runIdRef.current
+
+    startPhase03Analysis()
+
+    try {
+      const result = await analyzeBias({
+        apiKey,
+        model,
+        rootObjective: phase01.rootObjective,
+        functionTag: phase01.functionTag,
+        variables,
+        signal: controller.signal,
+      })
+      if (runId !== runIdRef.current) return
+      setPhase03Result(result)
+    } catch (err) {
+      if (err.name === 'AbortError' || runId !== runIdRef.current) return
+      const analysisError =
+        err instanceof AnalysisError
+          ? err
+          : new AnalysisError('network', 'Terjadi kesalahan tak terduga.')
+      setPhase03Error({
+        kind: analysisError.kind,
+        message: analysisError.message,
+      })
+    }
+  }, [
+    isRunning,
+    apiKey,
+    model,
+    variables,
+    phase01.rootObjective,
+    phase01.functionTag,
+    startPhase03Analysis,
+    setPhase03Result,
+    setPhase03Error,
+  ])
+
+  // Pindah fase = unmount komponen ini, jadi request yang masih jalan harus
+  // dibatalkan supaya tidak menulis hasil ke store setelah user pergi —
+  // sekaligus melepas status 'running' agar fase ini tidak stuck loading
+  // saat user kembali.
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+      cancelPhase03Analysis()
+    },
+    [cancelPhase03Analysis],
+  )
+
+  const selectedVariable = selected
+    ? variableById.get(selected.variableId)
+    : null
+  const selectedBias = selected
+    ? rows.find((v) => v.variableId === selected.variableId)?.biases[
+        selected.biasType
+      ]
+    : null
+
+  if (variables.length === 0) {
+    return (
+      <div>
+        <PhaseHeader />
+        <div className="empty-state">
+          <div className="empty-icon">🔍</div>
+          <h3>Belum ada variabel untuk divalidasi</h3>
+          <p>
+            Deteksi bias dijalankan terhadap variabel yang didefinisikan pada
+            Fase 02. Lengkapi dulu variabel di sana.
+          </p>
+          <button className="btn btn-primary" onClick={onPrev}>
+            ← Kembali ke Fase 02
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div>
-      <div className="phase-header">
-        <h2>Fase 03 — Logic Debugging & Sanitization</h2>
-        <p>
-          Debugging Logika & Sanitasi: Validasi variabel dari bias kognitif
-          menggunakan dokumen multimodal (eksternal LLM)
-        </p>
-      </div>
+      <PhaseHeader />
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <button
-          className={`btn ${!showImport ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setShowImport(false)}
-        >
-          📊 Matriks Validasi
-        </button>
-        <button
-          className={`btn ${showImport ? 'btn-ai' : 'btn-secondary'}`}
-          onClick={() => setShowImport(true)}
-        >
-          📥 Import Hasil Validasi AI
-        </button>
-      </div>
-
-      {showImport ? (
-        <div className="import-panel">
-          <div>
-            <div className="form-group">
-              <label>
-                Prompt Template (Salin dan jalankan pada LLM eksternal seperti
-                ChatGPT Plus / Gemini Advanced)
-              </label>
-              <div style={{ position: 'relative' }}>
-                <textarea
-                  className="textarea"
-                  style={{
-                    minHeight: 180,
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    background: '#F8FAFC',
-                  }}
-                  defaultValue={defaultPrompt}
-                />
-                <button
-                  className="btn btn-sm btn-ghost"
-                  style={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    background: 'white',
-                  }}
-                  onClick={() => navigator.clipboard.writeText(defaultPrompt)}
-                >
-                  📋 Copy
-                </button>
-              </div>
-              <p style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
-                * Jangan lupa upload file/dokumen terkait (PDF/Image) bersama
-                dengan prompt di atas.
-              </p>
-            </div>
-            <div className="form-group" style={{ marginTop: 16 }}>
-              <label>Paste JSON hasil validasi di sini</label>
-              <textarea
-                className="textarea"
-                style={{
-                  minHeight: 200,
-                  fontFamily: 'monospace',
-                  fontSize: 13,
-                }}
-                value={jsonInput}
-                onChange={(e) => setJsonInput(e.target.value)}
-                placeholder={`{\n  "validations": [\n    ...\n  ]\n}`}
-              />
-            </div>
-            <button className="btn btn-ai" onClick={handleParseJSON}>
-              🔄 Parse & Tampilkan Matriks
-            </button>
-          </div>
+      {!apiKey && (
+        <div className="alert alert-warning">
+          <span className="alert-icon">⚠️</span>
+          <span>
+            API key OpenRouter belum diatur. Buka <strong>Pengaturan</strong>{' '}
+            untuk menambahkannya sebelum menjalankan deteksi bias.
+          </span>
         </div>
-      ) : (
-        <div>
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 20,
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          className="btn btn-ai"
+          disabled={!canAnalyze}
+          onClick={runAnalysis}
+        >
+          {isRunning
+            ? 'Menganalisis...'
+            : validations.length > 0
+              ? '🔄 Analisis Ulang'
+              : '🤖 Analisis Bias dengan AI'}
+        </button>
+        <span style={{ fontSize: 12, color: '#64748B' }}>
+          {analyzedAt
+            ? `Analisis terakhir: ${new Date(analyzedAt).toLocaleString('id-ID')} · model ${model}`
+            : `${variables.length} variabel siap dianalisis · model ${model}`}
+        </span>
+      </div>
+
+      {isRunning && (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🤖</div>
+          <p>Menganalisis bias dengan AI...</p>
+          <p style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+            Proses ini bisa memakan waktu beberapa detik.
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="alert alert-error">
+          <span className="alert-icon">❌</span>
+          <span>
+            {error?.message || 'Terjadi kesalahan.'}{' '}
+            <button
+              className="btn btn-sm btn-secondary"
+              style={{ marginLeft: 8 }}
+              onClick={runAnalysis}
+            >
+              Coba Lagi
+            </button>
+          </span>
+        </div>
+      )}
+
+      {status === 'idle' && (
+        <div className="alert alert-info">
+          <span className="alert-icon">ℹ️</span>
+          <span>
+            Jalankan analisis untuk memeriksa {variables.length} variabel Fase
+            02 terhadap 4 jenis bias kognitif: Sampling Error, Overfitting,
+            Exception Suppression, dan Spurious Link.
+          </span>
+        </div>
+      )}
+
+      {rows.length > 0 && (
+        <>
           <div className="alert alert-info">
             <span className="alert-icon">ℹ️</span>
             <span>
@@ -219,183 +242,210 @@ Hasilkan output murni berformat JSON seperti ini:
               <thead>
                 <tr>
                   <th style={{ width: '28%' }}>Nama Variabel</th>
-                  <th style={{ width: '18%', textAlign: 'center' }}>
-                    Sampling Error
-                  </th>
-                  <th style={{ width: '18%', textAlign: 'center' }}>
-                    Overfitting
-                  </th>
-                  <th style={{ width: '18%', textAlign: 'center' }}>
-                    Exception Suppression
-                  </th>
-                  <th style={{ width: '18%', textAlign: 'center' }}>
-                    Spurious Link
-                  </th>
+                  {BIAS_TYPES.map((bias) => (
+                    <th
+                      key={bias.key}
+                      style={{ width: '18%', textAlign: 'center' }}
+                    >
+                      {bias.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {validations.map((v, i) => (
-                  <tr key={i}>
-                    <td style={{ fontWeight: 500, fontSize: 13 }}>
-                      {v.variableName}
-                    </td>
-                    {Object.keys(biasLabels).map((biasKey) => {
-                      const bias = v.biases[biasKey] || { status: 'validated' }
-                      const isWarning = bias.status === 'warning'
-                      const isSelected =
-                        selectedWarning?.variableName === v.variableName &&
-                        selectedWarning?.biasType === biasKey
-                      const bgCol = isSelected
-                        ? isWarning
-                          ? '#FEF3C7'
-                          : '#DCFCE7'
-                        : 'transparent'
+                {rows.map((v) => {
+                  const isStale = staleVariableIds.includes(v.variableId)
+                  return (
+                    <tr key={v.variableId}>
+                      <td style={{ fontWeight: 500, fontSize: 13 }}>
+                        {variableById.get(v.variableId)?.name ?? v.variableName}
+                        {isStale && (
+                          <span
+                            className="badge badge-warning"
+                            style={{ marginLeft: 8 }}
+                          >
+                            Perlu analisis ulang
+                          </span>
+                        )}
+                      </td>
+                      {BIAS_TYPES.map((bias) => {
+                        const cell = v.biases[bias.key]
+                        const isWarning = cell?.status === 'warning'
+                        const isSelected =
+                          selected?.variableId === v.variableId &&
+                          selected?.biasType === bias.key
 
-                      return (
-                        <td
-                          key={biasKey}
-                          style={{
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            background: bgCol,
-                            transition: 'background 0.2s',
-                          }}
-                          onClick={() =>
-                            handleCellClick(v.variableName, biasKey, bias)
-                          }
-                        >
-                          {isWarning ? (
+                        return (
+                          <td
+                            key={bias.key}
+                            style={{
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              background: isSelected
+                                ? isWarning
+                                  ? 'var(--warning-bg)'
+                                  : 'var(--success-bg)'
+                                : 'transparent',
+                              transition: 'background 0.2s',
+                            }}
+                            onClick={() =>
+                              selectPhase03Cell(v.variableId, bias.key)
+                            }
+                          >
                             <span
                               style={{ fontSize: 18 }}
-                              title="Lihat warning"
+                              title={
+                                isWarning
+                                  ? 'Lihat warning'
+                                  : 'Lihat alasan lolos'
+                              }
                             >
-                              ⚠️
+                              {isWarning ? '⚠️' : '✅'}
                             </span>
-                          ) : (
-                            <span
-                              style={{ fontSize: 18 }}
-                              title="Lihat alasan lolos"
-                            >
-                              ✅
-                            </span>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
+        </>
+      )}
 
-          {selectedWarning && (
-            <div
-              style={{
-                marginTop: 20,
-                padding: 16,
-                background:
-                  selectedWarning.status === 'warning' ? '#FEF3C7' : '#F0FDF4',
-                border: '1px solid',
-                borderColor:
-                  selectedWarning.status === 'warning' ? '#FDE68A' : '#BBF7D0',
-                borderRadius: 8,
-                display: 'flex',
-                gap: 16,
-              }}
-            >
-              <div style={{ fontSize: 24 }}>
-                {selectedWarning.status === 'warning' ? '⚠️' : '✅'}
-              </div>
-              <div style={{ flex: 1 }}>
-                <h4
-                  style={{
-                    color:
-                      selectedWarning.status === 'warning'
-                        ? '#92400E'
-                        : '#166534',
-                    marginBottom: 4,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <span>
-                    {selectedWarning.variableName} —{' '}
-                    {biasLabels[selectedWarning.biasType]}
-                  </span>
-                  <button
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color:
-                        selectedWarning.status === 'warning'
-                          ? '#92400E'
-                          : '#166534',
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
-                    onClick={() => setSelectedWarning(null)}
-                  >
-                    Tutup ✕
-                  </button>
-                </h4>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color:
-                      selectedWarning.status === 'warning'
-                        ? '#92400E'
-                        : '#166534',
-                    marginBottom: 8,
-                  }}
-                >
-                  <strong>Alasan AI:</strong> {selectedWarning.reason}
-                </p>
-                {selectedWarning.status === 'warning' && (
-                  <>
-                    <div
-                      style={{
-                        padding: 12,
-                        background: 'white',
-                        borderRadius: 6,
-                        fontSize: 13,
-                        color: '#B45309',
-                      }}
-                    >
-                      <strong>🔧 Rekomendasi Sanitasi:</strong>
-                      <br />
-                      {selectedWarning.recommendation}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {hasWarnings && (
-            <div className="alert alert-warning" style={{ marginTop: 24 }}>
-              <span className="alert-icon">⚠️</span>
-              <span>
-                Terdapat peringatan (warning) pada validasi logika. Selesaikan
-                atau revisi variabel tersebut sebelum melanjutkan ke Fase 04.
-              </span>
-            </div>
-          )}
-
-          <div className="phase-actions" style={{ marginTop: 32 }}>
-            <button className="btn btn-secondary" onClick={onPrev}>
-              ← Kembali ke Fase 02
-            </button>
+      {selected && selectedBias && selectedVariable && (
+        <div className="bias-card" style={{ marginTop: 20 }}>
+          <div className="bias-card-header">
+            <h4>
+              {selectedBias.status === 'warning' ? '⚠️' : '✅'}{' '}
+              {selectedVariable.name} — {BIAS_LABELS[selected.biasType]}
+            </h4>
             <button
-              className="btn btn-primary btn-lg"
-              disabled={hasWarnings}
-              onClick={onNext}
+              className="btn btn-sm btn-ghost"
+              onClick={() =>
+                selectPhase03Cell(selected.variableId, selected.biasType)
+              }
             >
-              Selesaikan Fase 03 →
+              Tutup ✕
             </button>
+          </div>
+          <div className="bias-card-body">
+            <div
+              className={`bias-item ${selectedBias.status === 'warning' ? 'warning' : 'validated'}`}
+            >
+              <div className="bias-item-title">Alasan AI</div>
+              <div className="bias-item-desc">{selectedBias.reason || '—'}</div>
+            </div>
+
+            {selectedBias.status === 'warning' && (
+              <>
+                <div className="bias-item" style={{ marginTop: 12 }}>
+                  <div className="bias-item-title">🔧 Rekomendasi Sanitasi</div>
+                  <div className="bias-item-desc">
+                    {selectedBias.recommendation ||
+                      'AI tidak memberikan rekomendasi spesifik.'}
+                  </div>
+                </div>
+
+                {/* Revisi inline: hanya variabel berstatus warning yang dapat
+                    diedit di sini, sesuai keputusan README #16. Menulis ke
+                    slice Fase 02 sekaligus menandai variabel perlu re-run. */}
+                <div style={{ marginTop: 16 }}>
+                  <h4 style={{ fontSize: 14, marginBottom: 8 }}>
+                    Revisi Variabel
+                  </h4>
+                  <div className="form-group">
+                    <label>Deskripsi</label>
+                    <input
+                      className="input"
+                      value={selectedVariable.description}
+                      placeholder="Perbaiki deskripsi agar bebas dari bias di atas..."
+                      onChange={(e) =>
+                        setPhase02Variable(
+                          selectedVariable.id,
+                          'description',
+                          e.target.value,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Sumber/Bukti</label>
+                    <input
+                      className="input"
+                      value={selectedVariable.source}
+                      placeholder="Tambahkan data/bukti pendukung..."
+                      onChange={(e) =>
+                        setPhase02Variable(
+                          selectedVariable.id,
+                          'source',
+                          e.target.value,
+                        )
+                      }
+                    />
+                    <span className="form-hint">
+                      Perubahan di sini otomatis tersimpan ke Fase 02.
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
+
+      {status === 'done' && !canFinish && (
+        <div className="alert alert-warning" style={{ marginTop: 24 }}>
+          <span className="alert-icon">⚠️</span>
+          <span>
+            {newVariables.length > 0 ? (
+              <>
+                Ada {newVariables.length} variabel baru dari Fase 01/02 yang
+                belum pernah divalidasi. Jalankan{' '}
+                <strong>Analisis Ulang</strong> agar seluruh variabel tercakup.
+              </>
+            ) : staleCount > 0 ? (
+              <>
+                {staleCount} variabel telah direvisi setelah analisis terakhir.
+                Jalankan <strong>Analisis Ulang</strong> untuk memverifikasi
+                perbaikannya sebelum melanjutkan ke Fase 04.
+              </>
+            ) : (
+              <>
+                Terdapat peringatan (warning) pada validasi logika. Klik sel ⚠️
+                untuk membaca rekomendasi sanitasi, revisi variabelnya, lalu
+                jalankan <strong>Analisis Ulang</strong>.
+              </>
+            )}
+          </span>
+        </div>
+      )}
+
+      <div className="phase-actions" style={{ marginTop: 32 }}>
+        <button className="btn btn-secondary" onClick={onPrev}>
+          ← Kembali ke Fase 02
+        </button>
+        <button
+          className="btn btn-primary btn-lg"
+          disabled={!canFinish}
+          onClick={onNext}
+        >
+          Selesaikan Fase 03 →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PhaseHeader() {
+  return (
+    <div className="phase-header">
+      <h2>Fase 03 — Logic Debugging &amp; Sanitization</h2>
+      <p>
+        Debugging Logika &amp; Sanitasi: Validasi variabel Fase 02 dari 4 jenis
+        bias kognitif menggunakan AI
+      </p>
     </div>
   )
 }

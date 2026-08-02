@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Phase01 from '../components/phases/Phase01'
 import Phase02 from '../components/phases/Phase02'
@@ -38,13 +38,15 @@ export default function SessionPage() {
   // Local state to simulate progression (so if they click Selesaikan, it unlocks the next)
   const [maxUnlockedPhase, setMaxUnlockedPhase] = useState(1)
 
-  useEffect(() => {
-    if (session) {
-      const maxPhase = session.status === 'done' ? 6 : session.currentPhase
-      setMaxUnlockedPhase(maxPhase)
-      setActivePhase(maxPhase)
-    }
-  }, [session])
+  // Sinkronkan fase awal saat sesi ini pertama kali dimuat (atau berganti).
+  // Dihitung saat render, bukan efek, agar tidak memicu render tambahan.
+  const [syncedSession, setSyncedSession] = useState(null)
+  if (session && session !== syncedSession) {
+    setSyncedSession(session)
+    const maxPhase = session.status === 'done' ? 6 : session.currentPhase
+    setMaxUnlockedPhase(maxPhase)
+    setActivePhase(maxPhase)
+  }
 
   const phaseStates = phases.reduce((acc, p) => {
     if (session?.status === 'done' || maxUnlockedPhase === 6) {

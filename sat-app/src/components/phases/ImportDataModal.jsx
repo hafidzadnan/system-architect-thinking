@@ -33,9 +33,12 @@ export default function ImportDataModal({ show, onClose, onApply }) {
 
   // Reset saat modal dibuka (bukan saat ditutup) — reset-on-close berlomba
   // dengan animasi penutupan dan bisa memunculkan kedipan konten Step 1.
-  useEffect(() => {
+  // Dihitung saat render (bukan efek) agar tidak memicu render tambahan.
+  const [prevShow, setPrevShow] = useState(show)
+  if (show !== prevShow) {
+    setPrevShow(show)
     if (show) setState(INITIAL_STATE)
-  }, [show])
+  }
 
   // Batalkan request yang masih berjalan jika modal ditutup/unmount.
   useEffect(() => {
