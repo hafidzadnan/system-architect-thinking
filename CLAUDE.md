@@ -14,9 +14,13 @@ npm install
 npm run dev       # Vite dev server
 npm run build     # production build
 npm run preview   # preview a production build
+npm run lint      # ESLint (flat config, eslint.config.js)
+npm run format    # Prettier --write
 ```
 
-There is no lint script and no test framework configured. There is also no `tsconfig.json` — the `typescript` devDependency is an unused Vite scaffold leftover; the project is plain `.jsx`, not `.tsx`. Don't invent `npm run lint` / `npm test` / type-check commands.
+A pre-commit hook (Husky, hooked via `core.hooksPath` at the repo root pointing to `sat-app/.husky` — needed because `sat-app/` isn't the git root) runs `lint-staged` on staged `.js`/`.jsx` files. GitHub Actions CI (`.github/workflows/ci.yml`) runs `npm ci`, `npm run lint`, and `npm run build` on push/PR to `main`; Dependabot (`.github/dependabot.yml`) opens weekly update PRs for both npm (`sat-app/`) and GitHub Actions.
+
+There is still no test framework and no `tsconfig.json` — the `typescript` devDependency is an unused Vite scaffold leftover; the project is plain `.jsx`, not `.tsx`. Don't invent `npm test` / type-check commands.
 
 ## Architecture
 
