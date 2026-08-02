@@ -7,7 +7,7 @@ const pageTitles = {
 }
 
 export default function Header() {
-  const username = useAuthStore(s => s.username)
+  const username = useAuthStore((s) => s.username)
   const location = useLocation()
   const title = location.pathname.startsWith('/session/')
     ? 'Sesi Keputusan'
@@ -18,7 +18,9 @@ export default function Header() {
       <span className="header-title">{title}</span>
       <div className="header-user">
         <span>{username}</span>
-        <div className="header-avatar">{username?.charAt(0)?.toUpperCase() || 'U'}</div>
+        <div className="header-avatar">
+          {username?.charAt(0)?.toUpperCase() || 'U'}
+        </div>
       </div>
     </header>
   )

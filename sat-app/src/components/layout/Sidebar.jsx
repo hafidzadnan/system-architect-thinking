@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 
 export default function Sidebar() {
-  const logout = useAuthStore(s => s.logout)
+  const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
 
   const handleLogout = () => {
