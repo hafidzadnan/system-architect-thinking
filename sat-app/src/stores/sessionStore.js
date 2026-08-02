@@ -1,6 +1,12 @@
 import { create } from 'zustand'
 import { getQuadrant } from '../utils/eisenhowerLogic'
-import { TAG_HARDCODED } from '../utils/constants'
+import {
+  TAG_HARDCODED,
+  CRITERIA_BENEFIT,
+  MIN_OPTIONS,
+  MAX_OPTIONS,
+} from '../utils/constants'
+import { computeEvComparison } from '../utils/evCalculator'
 
 // Mock sessions for UI demo
 const mockSessions = [
@@ -76,6 +82,30 @@ const emptyVariableDetail = {
   thresholdValue: '',
 }
 
+const emptyOption = () => ({ id: crypto.randomUUID(), name: '' })
+
+const initialPhase04 = {
+  options: [emptyOption(), emptyOption()], // minimal 2 opsi (README #12)
+  // Kriteria disimpan sebagai list tersendiri (bukan diturunkan 1:1 dari
+  // variabel) karena README #19 mengizinkan AI memecah satu variabel jadi
+  // dua kriteria Benefit + Cost. Tautan ke asalnya lewat sourceVariableId.
+  criteria: [], // { id, sourceVariableId, name, type, weight, justification }
+  scores: {}, // { [criteriaId]: { [optionId]: { value, probability } } }
+  mapStatus: 'idle', // idle | running | error | done
+  mapError: null, // { kind, message }
+  mappedAt: null,
+}
+
+const initialPhase05 = {
+  zombieStatus: 'positive', // positive | rollback
+  zombieJustification: '',
+  metrics: [emptyRow()],
+  interval: 'Bulanan',
+  rollbackTrigger: '',
+  stakeholderQuadrant: '',
+  stakeholderJustification: '',
+}
+
 /**
  * Daftar variabel Fase 02 = seluruh baris EVM Fase 01 yang tidak kosong,
  * digabung dengan detail yang diisi user di Fase 02.
@@ -127,6 +157,42 @@ export function selectPhase02UnplottedTasks(state) {
     }))
 }
 
+/**
+ * Kriteria Fase 04 yang sumbernya masih ada di Fase 02. Kriteria yang
+ * variabel asalnya sudah dihapus di Fase 01 dibuang di sini agar tabel EV
+ * tidak pernah menampilkan baris hantu.
+ */
+export function selectPhase04Criteria(state) {
+  const variableById = new Map(
+    selectPhase02Variables(state).map((v) => [v.id, v]),
+  )
+
+  return state.phase04.criteria
+    .filter((c) => variableById.has(c.sourceVariableId))
+    .map((c) => {
+      const source = variableById.get(c.sourceVariableId)
+      return {
+        ...c,
+        sourceName: source.name,
+        sourceOrigin:
+          source.origin === 'internal'
+            ? 'Parameter Internal'
+            : 'Constraint Eksternal',
+      }
+    })
+}
+
+/**
+ * Hasil kalkulasi EV per opsi kebijakan.
+ */
+export function selectPhase04Results(state) {
+  return computeEvComparison({
+    options: state.phase04.options,
+    criteria: selectPhase04Criteria(state),
+    scores: state.phase04.scores,
+  })
+}
+
 export const useSessionStore = create((set, get) => ({
   sessions: mockSessions,
   activeSession: null,
@@ -138,6 +204,8 @@ export const useSessionStore = create((set, get) => ({
   phase01: initialPhase01,
   phase02: initialPhase02,
   phase03: initialPhase03,
+  phase04: initialPhase04,
+  phase05: initialPhase05,
 
   setActiveSession: (id) => {
     const session = get().sessions.find((s) => s.id === id)
@@ -365,4 +433,178 @@ export const useSessionStore = create((set, get) => ({
         },
       }
     }),
+
+  // ===== FASE 04 =====
+
+  addPhase04Option: () =>
+    set((state) => {
+      if (state.phase04.options.length >= MAX_OPTIONS) return state
+      return {
+        phase04: {
+          ...state.phase04,
+          options: [...state.phase04.options, emptyOption()],
+        },
+      }
+    }),
+
+  updatePhase04Option: (optionId, name) =>
+    set((state) => ({
+      phase04: {
+        ...state.phase04,
+        options: state.phase04.options.map((o) =>
+          o.id === optionId ? { ...o, name } : o,
+        ),
+      },
+    })),
+
+  // Skor di-key oleh optionId, jadi menghapus opsi harus ikut membersihkan
+  // kolom skornya agar tidak menumpuk jadi data yatim.
+  removePhase04Option: (optionId) =>
+    set((state) => {
+      if (state.phase04.options.length <= MIN_OPTIONS) return state
+      const scores = {}
+      for (const [criteriaId, byOption] of Object.entries(
+        state.phase04.scores,
+      )) {
+        scores[criteriaId] = Object.fromEntries(
+          Object.entries(byOption).filter(([id]) => id !== optionId),
+        )
+      }
+      return {
+        phase04: {
+          ...state.phase04,
+          options: state.phase04.options.filter((o) => o.id !== optionId),
+          scores,
+        },
+      }
+    }),
+
+  addPhase04Criterion: (sourceVariableId) =>
+    set((state) => ({
+      phase04: {
+        ...state.phase04,
+        criteria: [
+          ...state.phase04.criteria,
+          {
+            id: crypto.randomUUID(),
+            sourceVariableId,
+            name: '',
+            type: CRITERIA_BENEFIT,
+            weight: '',
+            justification: '',
+          },
+        ],
+      },
+    })),
+
+  updatePhase04Criterion: (criteriaId, field, value) =>
+    set((state) => ({
+      phase04: {
+        ...state.phase04,
+        criteria: state.phase04.criteria.map((c) =>
+          c.id === criteriaId ? { ...c, [field]: value } : c,
+        ),
+      },
+    })),
+
+  removePhase04Criterion: (criteriaId) =>
+    set((state) => {
+      const scores = Object.fromEntries(
+        Object.entries(state.phase04.scores).filter(
+          ([id]) => id !== criteriaId,
+        ),
+      )
+      return {
+        phase04: {
+          ...state.phase04,
+          criteria: state.phase04.criteria.filter((c) => c.id !== criteriaId),
+          scores,
+        },
+      }
+    }),
+
+  setPhase04Score: (criteriaId, optionId, field, value) =>
+    set((state) => ({
+      phase04: {
+        ...state.phase04,
+        scores: {
+          ...state.phase04.scores,
+          [criteriaId]: {
+            ...state.phase04.scores[criteriaId],
+            [optionId]: {
+              value: '',
+              probability: '',
+              ...state.phase04.scores[criteriaId]?.[optionId],
+              [field]: value,
+            },
+          },
+        },
+      },
+    })),
+
+  startPhase04Mapping: () =>
+    set((state) => ({
+      phase04: { ...state.phase04, mapStatus: 'running', mapError: null },
+    })),
+
+  setPhase04Mapping: (criteria) =>
+    set((state) => ({
+      phase04: {
+        ...state.phase04,
+        mapStatus: 'done',
+        mapError: null,
+        criteria,
+        scores: {}, // kriteria baru = id baru, skor lama tidak lagi relevan
+        mappedAt: new Date().toISOString(),
+      },
+    })),
+
+  setPhase04MapError: (mapError) =>
+    set((state) => ({
+      phase04: { ...state.phase04, mapStatus: 'error', mapError },
+    })),
+
+  // Alasan yang sama dengan cancelPhase03Analysis: status 'running' hanya
+  // valid selama Phase04 ter-mount karena AbortController-nya di komponen.
+  cancelPhase04Mapping: () =>
+    set((state) => {
+      if (state.phase04.mapStatus !== 'running') return state
+      return {
+        phase04: {
+          ...state.phase04,
+          mapStatus: state.phase04.criteria.length > 0 ? 'done' : 'idle',
+        },
+      }
+    }),
+
+  // ===== FASE 05 =====
+
+  setPhase05Field: (field, value) =>
+    set((state) => ({ phase05: { ...state.phase05, [field]: value } })),
+
+  addPhase05Metric: () =>
+    set((state) => ({
+      phase05: {
+        ...state.phase05,
+        metrics: [...state.phase05.metrics, emptyRow()],
+      },
+    })),
+
+  updatePhase05Metric: (id, value) =>
+    set((state) => ({
+      phase05: {
+        ...state.phase05,
+        metrics: state.phase05.metrics.map((row) =>
+          row.id === id ? { ...row, value } : row,
+        ),
+      },
+    })),
+
+  removePhase05Metric: (id) =>
+    set((state) => ({
+      phase05: {
+        ...state.phase05,
+        metrics: state.phase05.metrics.filter((row) => row.id !== id),
+      },
+    })),
 }))
