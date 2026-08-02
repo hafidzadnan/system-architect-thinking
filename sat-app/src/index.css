@@ -1344,3 +1344,49 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--secondary-light);
 }
+
+/* ===== PRINT =====
+   Dipakai tombol "Cetak / Simpan PDF" di Ringkasan. Keputusan README #3:
+   tanpa library PDF generation — user memakai dialog cetak browser. */
+@media print {
+  .sidebar,
+  .sidebar-backdrop,
+  .header,
+  .phase-nav,
+  .phase-actions,
+  .btn {
+    display: none !important;
+  }
+
+  .app-layout,
+  .main-content,
+  .page-content,
+  .session-layout,
+  .phase-content {
+    display: block;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .summary-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 12px 0;
+  }
+
+  .alert,
+  .card,
+  .chart-container {
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  /* Tabel ringkasan harus tercetak utuh, bukan ikut scroll container. */
+  .table-responsive {
+    overflow: visible;
+  }
+}
