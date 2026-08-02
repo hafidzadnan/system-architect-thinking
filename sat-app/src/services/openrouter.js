@@ -154,26 +154,33 @@ export function validateAnalysis(obj) {
 }
 
 /**
- * Kirim teks sumber ke OpenRouter dan kembalikan hasil analisis yang sudah
- * divalidasi. response_format dikirim dulu untuk model yang mendukung JSON
- * mode; ~16% model di katalog OpenRouter menolaknya dengan 400, jadi bila
- * itu terjadi field-nya dilepas dan request diulang sekali tanpa itu.
+ * Kirim satu pasang system/user prompt ke OpenRouter dan kembalikan objek
+ * JSON hasil parse (belum divalidasi bentuknya — itu tugas pemanggil).
+ * response_format dikirim dulu untuk model yang mendukung JSON mode; ~16%
+ * model di katalog OpenRouter menolaknya dengan 400, jadi bila itu terjadi
+ * field-nya dilepas dan request diulang sekali tanpa itu.
  */
-export async function analyzeDocument({ apiKey, model, text, signal }) {
+export async function requestJson({
+  apiKey,
+  model,
+  systemPrompt,
+  userContent,
+  signal,
+}) {
   if (!apiKey) {
     throw new AnalysisError('missing_key', MESSAGES.missing_key)
   }
 
   const trimmedText =
-    text.length > MAX_INPUT_CHARS
-      ? text.slice(0, MAX_INPUT_CHARS) +
+    userContent.length > MAX_INPUT_CHARS
+      ? userContent.slice(0, MAX_INPUT_CHARS) +
         '\n\n[...teks dipotong karena terlalu panjang...]'
-      : text
+      : userContent
 
   const body = {
     model,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: trimmedText },
     ],
     temperature: 0.2,
@@ -200,6 +207,20 @@ export async function analyzeDocument({ apiKey, model, text, signal }) {
     )
   }
 
-  const content = choice?.message?.content ?? ''
-  return validateAnalysis(extractJson(content))
+  return extractJson(choice?.message?.content ?? '')
+}
+
+/**
+ * Kirim teks sumber ke OpenRouter dan kembalikan hasil analisis Fase 01 yang
+ * sudah dinormalisasi ke 6 field form.
+ */
+export async function analyzeDocument({ apiKey, model, text, signal }) {
+  const parsed = await requestJson({
+    apiKey,
+    model,
+    systemPrompt: SYSTEM_PROMPT,
+    userContent: text,
+    signal,
+  })
+  return validateAnalysis(parsed)
 }

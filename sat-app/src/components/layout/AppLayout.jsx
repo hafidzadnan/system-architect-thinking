@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
@@ -9,9 +9,13 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
 
-  useEffect(() => {
+  // Tutup sidebar saat rute berpindah. Dihitung saat render (bukan efek)
+  // agar tidak memicu render tambahan setelah commit.
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname)
     setSidebarOpen(false)
-  }, [location.pathname])
+  }
 
   if (!isLoggedIn) return <Navigate to="/login" replace />
 
