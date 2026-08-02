@@ -33,37 +33,43 @@ export default function SessionSummary({ onPrev }) {
 
       <div className="summary-section">
         <h3>2. Variables & Constraints (Fase 02)</h3>
-        <table className="var-table">
-          <thead>
-            <tr>
-              <th>Nama Variabel</th>
-              <th>Tag</th>
-              <th>Kategori Eisenhower</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Sisa Pagu Perjalanan Dinas</td>
-              <td>
-                <span className="badge badge-draft">Hardcoded Data</span>
-              </td>
-              <td>
-                <span className="badge badge-progress">
-                  Kuadran 2 (Cron Job)
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <td>Kesiapan SDM KPPN</td>
-              <td>
-                <span className="badge badge-warning">Variable Parameter</span>
-              </td>
-              <td>
-                <span className="badge badge-error">Kuadran 1 (Interrupt)</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-responsive">
+          <table className="var-table">
+            <thead>
+              <tr>
+                <th>Nama Variabel</th>
+                <th>Tag</th>
+                <th>Kategori Eisenhower</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sisa Pagu Perjalanan Dinas</td>
+                <td>
+                  <span className="badge badge-draft">Hardcoded Data</span>
+                </td>
+                <td>
+                  <span className="badge badge-progress">
+                    Kuadran 2 (Cron Job)
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Kesiapan SDM KPPN</td>
+                <td>
+                  <span className="badge badge-warning">
+                    Variable Parameter
+                  </span>
+                </td>
+                <td>
+                  <span className="badge badge-error">
+                    Kuadran 1 (Interrupt)
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="summary-section">
