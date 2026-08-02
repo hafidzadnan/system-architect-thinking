@@ -34,10 +34,26 @@ const mockSessions = [
   },
 ]
 
+const emptyRow = () => ({ id: crypto.randomUUID(), value: '' })
+
+const initialPhase01 = {
+  rootObjective: '',
+  functionTag: '',
+  functionJustification: '',
+  internalParameters: [emptyRow()],
+  externalConstraints: [emptyRow()],
+  recommendedTasks: [emptyRow()],
+}
+
 export const useSessionStore = create((set, get) => ({
   sessions: mockSessions,
   activeSession: null,
   activePhase: 1,
+
+  // Data form Fase 01. Disimpan di sini (bukan useState lokal di Phase01)
+  // agar bertahan saat user pindah ke fase lain lalu kembali; hilang saat
+  // refresh halaman penuh, konsisten dengan store lain di app ini.
+  phase01: initialPhase01,
 
   setActiveSession: (id) => {
     const session = get().sessions.find((s) => s.id === id)
@@ -45,4 +61,55 @@ export const useSessionStore = create((set, get) => ({
   },
   setActivePhase: (phase) => set({ activePhase: phase }),
   clearActiveSession: () => set({ activeSession: null, activePhase: 1 }),
+
+  setPhase01Field: (field, value) =>
+    set((state) => ({ phase01: { ...state.phase01, [field]: value } })),
+
+  addPhase01Row: (listField) =>
+    set((state) => ({
+      phase01: {
+        ...state.phase01,
+        [listField]: [...state.phase01[listField], emptyRow()],
+      },
+    })),
+
+  updatePhase01Row: (listField, id, value) =>
+    set((state) => ({
+      phase01: {
+        ...state.phase01,
+        [listField]: state.phase01[listField].map((row) =>
+          row.id === id ? { ...row, value } : row,
+        ),
+      },
+    })),
+
+  removePhase01Row: (listField, id) =>
+    set((state) => ({
+      phase01: {
+        ...state.phase01,
+        [listField]: state.phase01[listField].filter((row) => row.id !== id),
+      },
+    })),
+
+  // Terapkan hasil analisis AI (bentuk tervalidasi dari services/openrouter)
+  // ke form manual Fase 01. List kosong dijaga tetap punya 1 baris agar UI
+  // dynamic-list-nya tidak kosong melompong.
+  applyPhase01Import: (analysis) =>
+    set(() => {
+      const toRows = (list) =>
+        list.length > 0
+          ? list.map((value) => ({ id: crypto.randomUUID(), value }))
+          : [emptyRow()]
+
+      return {
+        phase01: {
+          rootObjective: analysis.rootObjective,
+          functionTag: analysis.functionTag,
+          functionJustification: analysis.functionJustification,
+          internalParameters: toRows(analysis.internalParameters),
+          externalConstraints: toRows(analysis.externalConstraints),
+          recommendedTasks: toRows(analysis.recommendedTasks),
+        },
+      }
+    }),
 }))
