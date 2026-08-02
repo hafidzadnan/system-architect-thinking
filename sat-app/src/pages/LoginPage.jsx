@@ -31,15 +31,35 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username</label>
-            <input className="input" type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Masukkan username" />
+            <input
+              className="input"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Masukkan username"
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Masukkan password" />
+            <input
+              className="input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Masukkan password"
+            />
           </div>
-          <button type="submit" className="btn btn-primary btn-lg btn-full" style={{ marginTop: 8 }}>Masuk</button>
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg btn-full"
+            style={{ marginTop: 8 }}
+          >
+            Masuk
+          </button>
         </form>
-        <p style={{ marginTop: 20, fontSize: 12, color: '#94A3B8' }}>Demo: demo / demo123</p>
+        <p style={{ marginTop: 20, fontSize: 12, color: '#94A3B8' }}>
+          Demo: demo / demo123
+        </p>
       </div>
     </div>
   )
