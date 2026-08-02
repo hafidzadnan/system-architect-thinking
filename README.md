@@ -12,7 +12,12 @@ Platform pengambilan keputusan terstruktur berbasis kerangka kerja "Algoritma Be
     ```bash
     npm install
     ```
-3.  Jalankan aplikasi:
+3.  Salin `.env.example` ke `.env` dan isi API key OpenRouter (dipakai fitur Import Data AI di Fase 01):
+    ```bash
+    cp .env.example .env
+    ```
+    ⚠️ Vite menanam nilai `VITE_*` ke dalam bundle JS hasil build — aman untuk pemakaian lokal/demo, **tidak** aman untuk deploy publik dengan key sungguhan.
+4.  Jalankan aplikasi:
     ```bash
     npm run dev
     ```
@@ -33,7 +38,7 @@ Platform pengambilan keputusan terstruktur berbasis kerangka kerja "Algoritma Be
 | 4 | localStorage (frontend-only, validasi konsep cepat) | ✅ |
 | 5 | Localhost dulu, deploy ke Vercel nanti | ✅ |
 | 6 | 4 jenis bias: Data Sampling Error, Overfitting, Exception Suppression, Spurious Link | ✅ |
-| 7 | LLM: Google Gemini API (free tier) | ✅ |
+| 7 | LLM: OpenRouter API (bring-your-own-key, model pilihan pengguna) | ✅ |
 | 8 | Eisenhower Matrix sebagai fitur standalone (update PRD) | ✅ |
 | 9 | Bobot terpisah per tipe (Benefit total = 1.0, Cost total = 1.0) | ✅ |
 | 10 | Desain formal, clean, kontras baik, untuk instansi pemerintah | ✅ |
@@ -56,9 +61,12 @@ Platform pengambilan keputusan terstruktur berbasis kerangka kerja "Algoritma Be
 | State Management | **Zustand + persist middleware** | Lightweight, built-in localStorage sync |
 | Styling | **Vanilla CSS** + CSS Variables | Clean, formal, tanpa dependency |
 | Chart | **Chart.js + react-chartjs-2** | Bar chart perbandingan EV |
-| LLM Integration | **Google Gemini API** (client-side fetch) | Free tier, default API key tersedia untuk demo |
+| LLM Integration | **OpenRouter API** (client-side fetch) | Bring-your-own-key, model dipilih pengguna |
+| Document Parsing | **pdfjs-dist** + **SheetJS (xlsx)** | Ekstraksi teks dari PDF/Excel untuk fitur Import Data AI (Fase 01), keduanya lazy-loaded |
 | Font | **Inter** (Google Fonts) | Clean, professional, high readability |
 | Routing | **React Router v6** | SPA navigation |
+
+> **Catatan dependency:** `xlsx` diinstall dari CDN resmi SheetJS (`cdn.sheetjs.com`), bukan npm registry — paket `xlsx` di npm registry sudah tidak diperbarui sejak 2022. Konsekuensinya: Dependabot tidak bisa mendeteksi/mengupdate dependency berbentuk URL ini, jadi versinya harus di-bump manual di `package.json`.
 
 ### Design System
 
@@ -130,8 +138,8 @@ src/
 ├── utils/
 │   ├── evCalculator.js             # EV formula logic
 │   ├── eisenhowerLogic.js          # Priority queue categorization
-│   ├── biasAnalyzer.js             # Gemini API: bias analysis prompt + call
-│   ├── criteriaMapper.js           # Gemini API: EVM → Benefit/Cost mapping
+│   ├── biasAnalyzer.js             # OpenRouter API: bias analysis prompt + call
+│   ├── criteriaMapper.js           # OpenRouter API: EVM → Benefit/Cost mapping
 │   ├── templateData.js             # Studi kasus KPPN (pre-filled)
 │   └── constants.js                # Bias types, categories, labels
 │
@@ -155,8 +163,8 @@ src/
 
 #### 3. Session Page — Guided Flow 5 Fase
 ##### [FASE 01] System Requirements Analysis
-- Mode Input Manual & Import AI Agent (JSON)
-- Pendefinisian Root Objective, Tag Fungsi, EVM
+- Form manual (selalu tampil, tersimpan di session store): Root Objective, Tag Fungsi, EVM, Rekomendasi Tasks
+- **Wizard "Import Data"** (modal 3 langkah): unggah file (`.md .txt .json .csv .xlsx .pdf`) atau tempel teks → dianalisis OpenRouter API → review hasil → terapkan otomatis ke form manual (tetap bisa diedit)
 
 ##### [FASE 02] Variable & Constraint Definition
 - Data Tagging (Hardcoded/Variable Parameter)
@@ -165,7 +173,7 @@ src/
 
 ##### [FASE 03] Logic Debugging & Sanitization
 - Analisis 4 jenis bias (Sampling Error, Overfitting, Exception Suppression, Spurious Link)
-- Integrasi Gemini API untuk deteksi bias otomatis
+- Integrasi OpenRouter API untuk deteksi bias otomatis
 
 ##### [FASE 04] Computation & Execution
 - Mapping Kriteria (Benefit/Cost) oleh AI
@@ -182,7 +190,7 @@ src/
 - Tool prioritas mandiri berbasis U (Time Criticality) dan I (System Impact)
 
 #### 5. Settings Page
-- Manajemen Gemini API Key (Default tersedia)
+- Manajemen OpenRouter API Key + pilihan model
 
 ---
 
