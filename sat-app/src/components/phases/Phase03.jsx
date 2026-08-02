@@ -214,74 +214,79 @@ Hasilkan output murni berformat JSON seperti ini:
             </span>
           </div>
 
-          <table className="var-table" style={{ marginTop: 16 }}>
-            <thead>
-              <tr>
-                <th style={{ width: '28%' }}>Nama Variabel</th>
-                <th style={{ width: '18%', textAlign: 'center' }}>
-                  Sampling Error
-                </th>
-                <th style={{ width: '18%', textAlign: 'center' }}>
-                  Overfitting
-                </th>
-                <th style={{ width: '18%', textAlign: 'center' }}>
-                  Exception Suppression
-                </th>
-                <th style={{ width: '18%', textAlign: 'center' }}>
-                  Spurious Link
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {validations.map((v, i) => (
-                <tr key={i}>
-                  <td style={{ fontWeight: 500, fontSize: 13 }}>
-                    {v.variableName}
-                  </td>
-                  {Object.keys(biasLabels).map((biasKey) => {
-                    const bias = v.biases[biasKey] || { status: 'validated' }
-                    const isWarning = bias.status === 'warning'
-                    const isSelected =
-                      selectedWarning?.variableName === v.variableName &&
-                      selectedWarning?.biasType === biasKey
-                    const bgCol = isSelected
-                      ? isWarning
-                        ? '#FEF3C7'
-                        : '#DCFCE7'
-                      : 'transparent'
-
-                    return (
-                      <td
-                        key={biasKey}
-                        style={{
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          background: bgCol,
-                          transition: 'background 0.2s',
-                        }}
-                        onClick={() =>
-                          handleCellClick(v.variableName, biasKey, bias)
-                        }
-                      >
-                        {isWarning ? (
-                          <span style={{ fontSize: 18 }} title="Lihat warning">
-                            ⚠️
-                          </span>
-                        ) : (
-                          <span
-                            style={{ fontSize: 18 }}
-                            title="Lihat alasan lolos"
-                          >
-                            ✅
-                          </span>
-                        )}
-                      </td>
-                    )
-                  })}
+          <div className="table-responsive">
+            <table className="var-table" style={{ marginTop: 16 }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '28%' }}>Nama Variabel</th>
+                  <th style={{ width: '18%', textAlign: 'center' }}>
+                    Sampling Error
+                  </th>
+                  <th style={{ width: '18%', textAlign: 'center' }}>
+                    Overfitting
+                  </th>
+                  <th style={{ width: '18%', textAlign: 'center' }}>
+                    Exception Suppression
+                  </th>
+                  <th style={{ width: '18%', textAlign: 'center' }}>
+                    Spurious Link
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {validations.map((v, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 500, fontSize: 13 }}>
+                      {v.variableName}
+                    </td>
+                    {Object.keys(biasLabels).map((biasKey) => {
+                      const bias = v.biases[biasKey] || { status: 'validated' }
+                      const isWarning = bias.status === 'warning'
+                      const isSelected =
+                        selectedWarning?.variableName === v.variableName &&
+                        selectedWarning?.biasType === biasKey
+                      const bgCol = isSelected
+                        ? isWarning
+                          ? '#FEF3C7'
+                          : '#DCFCE7'
+                        : 'transparent'
+
+                      return (
+                        <td
+                          key={biasKey}
+                          style={{
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            background: bgCol,
+                            transition: 'background 0.2s',
+                          }}
+                          onClick={() =>
+                            handleCellClick(v.variableName, biasKey, bias)
+                          }
+                        >
+                          {isWarning ? (
+                            <span
+                              style={{ fontSize: 18 }}
+                              title="Lihat warning"
+                            >
+                              ⚠️
+                            </span>
+                          ) : (
+                            <span
+                              style={{ fontSize: 18 }}
+                              title="Lihat alasan lolos"
+                            >
+                              ✅
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {selectedWarning && (
             <div

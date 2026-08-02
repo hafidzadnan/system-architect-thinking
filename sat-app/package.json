@@ -34,10 +34,12 @@
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.1",
     "chart.js": "^4.5.1",
+    "pdfjs-dist": "^6.2.108",
     "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "^5.0.13"
   }
 }

@@ -89,132 +89,134 @@ export default function Phase04({ onNext, onPrev }) {
             🤖 Mapping Kriteria dengan AI
           </button>
         </h3>
-        <table className="var-table">
-          <thead>
-            <tr>
-              <th>Sumber EVM</th>
-              <th>Nama Kriteria</th>
-              <th>Tipe</th>
-              <th>Bobot</th>
-              <th>Justifikasi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ fontSize: 12, color: '#64748B' }}>
-                Internal Requirement
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Akurasi & Kepatuhan Bukti"
-                />
-              </td>
-              <td>
-                <span className="badge badge-benefit">Benefit</span>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  type="number"
-                  step="0.1"
-                  defaultValue="0.6"
-                  style={{ width: 70, textAlign: 'center' }}
-                />
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Tanpa bukti dukung valid, organisasi gagal (Hygienic)"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ fontSize: 12, color: '#64748B' }}>
-                External Constraint
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Kecepatan Konsolidasi Laporan"
-                />
-              </td>
-              <td>
-                <span className="badge badge-benefit">Benefit</span>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  type="number"
-                  step="0.1"
-                  defaultValue="0.4"
-                  style={{ width: 70, textAlign: 'center' }}
-                />
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Laporan lambat mengurangi poin IKPA Kanwil"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ fontSize: 12, color: '#64748B' }}>
-                Internal Constraint
-              </td>
-              <td>
-                <input className="input" defaultValue="Beban Anggaran DIPA" />
-              </td>
-              <td>
-                <span className="badge badge-cost">Cost</span>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  type="number"
-                  step="0.1"
-                  defaultValue="0.7"
-                  style={{ width: 70, textAlign: 'center' }}
-                />
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Kehabisan pagu = fatal error seluruh unit"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ fontSize: 12, color: '#64748B' }}>
-                Internal Parameter
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Beban Waktu & Training"
-                />
-              </td>
-              <td>
-                <span className="badge badge-cost">Cost</span>
-              </td>
-              <td>
-                <input
-                  className="input"
-                  type="number"
-                  step="0.1"
-                  defaultValue="0.3"
-                  style={{ width: 70, textAlign: 'center' }}
-                />
-              </td>
-              <td>
-                <input
-                  className="input"
-                  defaultValue="Learning curve sistem baru mengganggu jam kerja"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-responsive">
+          <table className="var-table">
+            <thead>
+              <tr>
+                <th>Sumber EVM</th>
+                <th>Nama Kriteria</th>
+                <th>Tipe</th>
+                <th>Bobot</th>
+                <th>Justifikasi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ fontSize: 12, color: '#64748B' }}>
+                  Internal Requirement
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Akurasi & Kepatuhan Bukti"
+                  />
+                </td>
+                <td>
+                  <span className="badge badge-benefit">Benefit</span>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.1"
+                    defaultValue="0.6"
+                    style={{ width: 70, textAlign: 'center' }}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Tanpa bukti dukung valid, organisasi gagal (Hygienic)"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td style={{ fontSize: 12, color: '#64748B' }}>
+                  External Constraint
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Kecepatan Konsolidasi Laporan"
+                  />
+                </td>
+                <td>
+                  <span className="badge badge-benefit">Benefit</span>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.1"
+                    defaultValue="0.4"
+                    style={{ width: 70, textAlign: 'center' }}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Laporan lambat mengurangi poin IKPA Kanwil"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td style={{ fontSize: 12, color: '#64748B' }}>
+                  Internal Constraint
+                </td>
+                <td>
+                  <input className="input" defaultValue="Beban Anggaran DIPA" />
+                </td>
+                <td>
+                  <span className="badge badge-cost">Cost</span>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.1"
+                    defaultValue="0.7"
+                    style={{ width: 70, textAlign: 'center' }}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Kehabisan pagu = fatal error seluruh unit"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td style={{ fontSize: 12, color: '#64748B' }}>
+                  Internal Parameter
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Beban Waktu & Training"
+                  />
+                </td>
+                <td>
+                  <span className="badge badge-cost">Cost</span>
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.1"
+                    defaultValue="0.3"
+                    style={{ width: 70, textAlign: 'center' }}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input"
+                    defaultValue="Learning curve sistem baru mengganggu jam kerja"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
           <span className="weight-indicator weight-valid">
             ✅ Total Bobot Benefit: 1.0 / 1.0
@@ -232,7 +234,7 @@ export default function Phase04({ onNext, onPrev }) {
           Formula: EV = Σ(Benefit × Bobot × P_success) − Σ(Cost × Bobot ×
           P_risk)
         </p>
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-responsive">
           <table className="ev-table">
             <thead>
               <tr>
