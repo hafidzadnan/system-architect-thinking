@@ -21,7 +21,7 @@ Platform pengambilan keputusan terstruktur berbasis kerangka kerja "Algoritma Be
 
 ## 📋 Rencana Implementasi (Implementation Plan)
 
-Platform pengambilan keputusan terstruktur berbasis kerangka kerja "Algoritma Berpikir" yang mengadopsi paradigma pemrograman. MVP ini berfokus pada **guided flow 5 fase** + **Eisenhower Matrix tool** sebagai fitur standalone, menggunakan pendekatan **frontend-only** dengan localStorage untuk validasi konsep cepat.
+Platform pengambilan keputusan terstruktur berbasis kerangka kerja "Algoritma Berpikir" yang mengadopsi paradigma pemrograman. MVP ini berfokus pada **guided flow 5 fase** + **Eisenhower Matrix to[...]**
 
 ### Keputusan Desain yang Telah Disetujui
 
@@ -106,7 +106,7 @@ src/
 │   ├── session/
 │   │   ├── PhaseNavigator.jsx      # 5-phase sidebar dalam sesi
 │   │   ├── SessionCard.jsx
-│   │   └── SessionSummary.jsx      # Ringkasan output akhir
+│   │   │   └── SessionSummary.jsx      # Ringkasan output akhir
 │   ├── phases/
 │   │   ├── Phase01.jsx             # System Requirements Analysis
 │   │   ├── Phase02.jsx             # Variable & Constraint Definition
@@ -193,3 +193,7 @@ src/
 - `npm run build` & `npm run dev` verification
 - Browser testing untuk seluruh alur 5 fase
 - Visual verification untuk desain formal dan bahasa Indonesia yang konsisten
+
+## Project schedule
+
+- [ ] See docs/SCHEDULE.md — Weekly Meeting Agenda & Milestones
