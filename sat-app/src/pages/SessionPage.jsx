@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Phase01 from '../components/phases/Phase01'
 import Phase02 from '../components/phases/Phase02'
@@ -17,27 +17,36 @@ const phases = [
   { id: 6, label: 'Ringkasan', subtitle: 'Dokumen Keputusan Akhir' },
 ]
 
-const phaseComponents = { 1: Phase01, 2: Phase02, 3: Phase03, 4: Phase04, 5: Phase05, 6: SessionSummary }
+const phaseComponents = {
+  1: Phase01,
+  2: Phase02,
+  3: Phase03,
+  4: Phase04,
+  5: Phase05,
+  6: SessionSummary,
+}
 
 export default function SessionPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const sessions = useSessionStore(s => s.sessions)
-  const session = sessions.find(s => s.id === id)
+  const sessions = useSessionStore((s) => s.sessions)
+  const session = sessions.find((s) => s.id === id)
 
   // Local state to track which phase is currently being viewed
   const [activePhase, setActivePhase] = useState(1)
-  
+
   // Local state to simulate progression (so if they click Selesaikan, it unlocks the next)
   const [maxUnlockedPhase, setMaxUnlockedPhase] = useState(1)
 
-  useEffect(() => {
-    if (session) {
-      const maxPhase = session.status === 'done' ? 6 : session.currentPhase
-      setMaxUnlockedPhase(maxPhase)
-      setActivePhase(maxPhase)
-    }
-  }, [session])
+  // Sinkronkan fase awal saat sesi ini pertama kali dimuat (atau berganti).
+  // Dihitung saat render, bukan efek, agar tidak memicu render tambahan.
+  const [syncedSession, setSyncedSession] = useState(null)
+  if (session && session !== syncedSession) {
+    setSyncedSession(session)
+    const maxPhase = session.status === 'done' ? 6 : session.currentPhase
+    setMaxUnlockedPhase(maxPhase)
+    setActivePhase(maxPhase)
+  }
 
   const phaseStates = phases.reduce((acc, p) => {
     if (session?.status === 'done' || maxUnlockedPhase === 6) {
@@ -64,43 +73,60 @@ export default function SessionPage() {
 
   const handleNext = () => {
     if (activePhase === maxUnlockedPhase && activePhase < 6) {
-      setMaxUnlockedPhase(prev => prev + 1)
+      setMaxUnlockedPhase((prev) => prev + 1)
     }
-    setActivePhase(prev => Math.min(prev + 1, 6))
+    setActivePhase((prev) => Math.min(prev + 1, 6))
   }
 
   const handlePrev = () => {
-    setActivePhase(prev => Math.max(prev - 1, 1))
+    setActivePhase((prev) => Math.max(prev - 1, 1))
   }
 
   const PhaseComponent = phaseComponents[activePhase]
 
   if (!session) {
-    return <div style={{padding: 40}}>Sesi tidak ditemukan.</div>
+    return <div style={{ padding: 40 }}>Sesi tidak ditemukan.</div>
   }
 
   return (
     <div className="session-layout">
       <div className="phase-nav">
         <div className="phase-nav-back">
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>← Kembali ke Dashboard</button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate('/')}
+          >
+            ← Kembali ke Dashboard
+          </button>
         </div>
-        <div style={{padding:'0 16px', marginBottom:16}}>
-          <h4 style={{fontSize:14}}>{session.title}</h4>
-          <p style={{fontSize:12, color:'#64748B'}}>Fase {activePhase} dari 5</p>
-          <div className="progress-bar" style={{marginTop:6}}><div className="progress-fill" style={{width:`${(activePhase/5)*100}%`}} /></div>
+        <div style={{ padding: '0 16px', marginBottom: 16 }}>
+          <h4 style={{ fontSize: 14 }}>{session.title}</h4>
+          <p style={{ fontSize: 12, color: '#64748B' }}>
+            Fase {activePhase} dari 5
+          </p>
+          <div className="progress-bar" style={{ marginTop: 6 }}>
+            <div
+              className="progress-fill"
+              style={{ width: `${(activePhase / 5) * 100}%` }}
+            />
+          </div>
         </div>
         <ul className="phase-nav-list">
-          {phases.map(phase => {
+          {phases.map((phase) => {
             const state = phaseStates[phase.id]
             const isActive = phase.id === activePhase
             return (
-              <li key={phase.id}
+              <li
+                key={phase.id}
                 className={`phase-item ${isActive ? 'active' : ''} ${state === 'locked' ? 'locked' : ''} ${state === 'completed' && !isActive ? 'completed' : ''}`}
                 onClick={() => handlePhaseClick(phase)}
               >
                 <div className={`phase-icon ${isActive ? 'active' : state}`}>
-                  {state === 'completed' ? '✓' : state === 'locked' ? '🔒' : phase.id}
+                  {state === 'completed'
+                    ? '✓'
+                    : state === 'locked'
+                      ? '🔒'
+                      : phase.id}
                 </div>
                 <div className="phase-label">
                   <div>{phase.label}</div>

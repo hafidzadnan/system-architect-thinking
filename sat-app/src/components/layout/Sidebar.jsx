@@ -1,8 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 
-export default function Sidebar() {
-  const logout = useAuthStore(s => s.logout)
+export default function Sidebar({ open, onClose }) {
+  const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -11,16 +11,16 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? ' open' : ''}`}>
       <div className="sidebar-brand">
         <h2>⚙️ System Architect Thinking</h2>
         <p>Platform Pengambilan Keputusan</p>
       </div>
       <nav className="sidebar-nav">
-        <NavLink to="/" end>
+        <NavLink to="/" end onClick={onClose}>
           <span className="nav-icon">🏠</span> Dashboard
         </NavLink>
-        <NavLink to="/settings">
+        <NavLink to="/settings" onClick={onClose}>
           <span className="nav-icon">⚙️</span> Pengaturan
         </NavLink>
       </nav>
